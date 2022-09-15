@@ -133,7 +133,11 @@ in {
   ## flatLibDepends :: Component -> [Package]
   flatLibDepends = component:
     let
-      makePairs = map (p: rec { key=val.name; val=(p.components.library or p); });
+      makePairs = builtins.concatMap (p: 
+        let
+          mkp = c: rec { key=val.name; val=(c.components.library or c); };
+          sublibs = map mkp (builtins.attrValues (p.components.sublibs or {}));
+        in [ (mkp p) ] ++ sublibs);
       closure = builtins.genericClosure {
         startSet = makePairs component.depends;
         operator = {val,...}: makePairs val.config.depends;
